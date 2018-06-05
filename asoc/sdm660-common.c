@@ -26,6 +26,7 @@
 #include "codecs/sdm660_cdc/msm-analog-cdc.h"
 #include "codecs/wsa881x.h"
 
+
 #define __CHIPSET__ "SDM660 "
 #define MSM_DAILINK_NAME(name) (__CHIPSET__#name)
 
@@ -241,10 +242,12 @@ struct msm_wsa881x_dev_info {
 	struct device_node *of_node;
 	u32 index;
 };
+#ifndef CONFIG_SND_SOC_MADERA
 static struct snd_soc_aux_dev *msm_aux_dev;
 static struct snd_soc_codec_conf *msm_codec_conf;
 
 static bool msm_swap_gnd_mic(struct snd_soc_codec *codec, bool active);
+#endif
 
 static struct wcd_mbhc_config mbhc_cfg = {
 	.read_fw_bin = false,
@@ -5111,6 +5114,7 @@ void msm_tdm_snd_shutdown(struct snd_pcm_substream *substream)
 }
 EXPORT_SYMBOL(msm_tdm_snd_shutdown);
 
+#ifndef CONFIG_SND_SOC_MADERA
 /* Validate whether US EU switch is present or not */
 static int msm_prepare_us_euro(struct snd_soc_card *card)
 {
@@ -5250,6 +5254,7 @@ static bool msm_swap_gnd_mic(struct snd_soc_codec *codec, bool active)
 	}
 	return ret;
 }
+#endif
 
 static int msm_populate_dai_link_component_of_node(
 		struct msm_asoc_mach_data *pdata,
@@ -5382,6 +5387,7 @@ err:
 	return ret;
 }
 
+#ifndef CONFIG_SND_SOC_MADERA
 static int msm_wsa881x_init(struct snd_soc_component *component)
 {
 	u8 spkleft_ports[WSA881X_MAX_SWR_PORTS] = {100, 101, 102, 106};
@@ -5618,6 +5624,7 @@ err_mem:
 err_dt:
 	return ret;
 }
+#endif
 
 static void i2s_auxpcm_init(struct platform_device *pdev)
 {
@@ -5664,6 +5671,8 @@ static const struct of_device_id sdm660_asoc_machine_of_match[]  = {
 	  .data = "tasha_codec"},
 	{ .compatible = "qcom,sdm660-asoc-snd-tavil",
 	  .data = "tavil_codec"},
+	{ .compatible = "qcom,sdm710-asoc-snd-madera",
+	  .data = "madera_codec"},
 	{ .compatible = "qcom,sdm670-asoc-snd",
 	  .data = "internal_codec"},
 	{ .compatible = "qcom,sdm670-asoc-snd-tasha",
@@ -5684,7 +5693,9 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	const char *mclk = "qcom,msm-mclk-freq";
 	int ret = -EINVAL, id;
 	const struct of_device_id *match;
+#ifndef CONFIG_SND_SOC_MADERA
 	const char *usb_c_dt = "qcom,msm-mbhc-usbc-audio-supported";
+#endif
 
 	pdata = devm_kzalloc(&pdev->dev,
 			     sizeof(struct msm_asoc_mach_data),
@@ -5707,8 +5718,11 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	pdata->mclk_freq = id;
 
 	if (!strcmp(match->data, "tasha_codec") ||
-	    !strcmp(match->data, "tavil_codec")) {
-		if (!strcmp(match->data, "tasha_codec"))
+	    !strcmp(match->data, "tavil_codec") ||
+	    !strcmp(match->data, "madera_codec")) {
+		if (!strcmp(match->data, "madera_codec"))
+			pdata->snd_card_val = EXT_SND_CARD_MADERA;
+		else if (!strcmp(match->data, "tasha_codec"))
 			pdata->snd_card_val = EXT_SND_CARD_TASHA;
 		else
 			pdata->snd_card_val = EXT_SND_CARD_TAVIL;
@@ -5760,6 +5774,7 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 					"qcom,quat-mi2s-gpios", 0);
 	pdata->mi2s_gpio_p[QUIN_MI2S] = of_parse_phandle(pdev->dev.of_node,
 					"qcom,quin-mi2s-gpios", 0);
+#ifndef CONFIG_SND_SOC_MADERA
 	/*
 	 * Parse US-Euro gpio info from DT. Report no error if us-euro
 	 * entry is not found in DT file as some targets do not support
@@ -5786,6 +5801,7 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	if (ret)
 		dev_dbg(&pdev->dev, "msm_prepare_us_euro failed (%d)\n",
 			ret);
+#endif
 
 	i2s_auxpcm_init(pdev);
 
@@ -5799,14 +5815,17 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 		goto err;
 	}
 
+#ifndef CONFIG_SND_SOC_MADERA
 	if (!of_property_read_bool(pdev->dev.of_node, "qcom,wsa-disable")) {
 		ret = msm_init_wsa_dev(pdev, card);
 		if (ret)
 			goto err;
 	}
+#endif
 
 	ret = devm_snd_soc_register_card(&pdev->dev, card);
 	if (ret == -EPROBE_DEFER) {
+		dev_info(&pdev->dev, "Sound card %s deferred\n", card->name);
 		if (codec_reg_done) {
 			/*
 			 * return failure as EINVAL since other codec
@@ -5823,9 +5842,9 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	}
 	if (pdata->snd_card_val > INT_MAX_SND_CARD)
 		msm_ext_register_audio_notifier(pdev);
-
 	return 0;
 err:
+#ifndef CONFIG_SND_SOC_MADERA
 	if (pdata->us_euro_gpio > 0) {
 		dev_dbg(&pdev->dev, "%s free us_euro gpio %d\n",
 			__func__, pdata->us_euro_gpio);
@@ -5843,6 +5862,7 @@ err:
 		gpio_free(pdata->hph_en0_gpio);
 		pdata->hph_en0_gpio = 0;
 	}
+#endif
 	devm_kfree(&pdev->dev, pdata);
 	return ret;
 }
@@ -5855,6 +5875,7 @@ static int msm_asoc_machine_remove(struct platform_device *pdev)
 	if (pdata->snd_card_val <= INT_MAX_SND_CARD)
 		mutex_destroy(&pdata->cdc_int_mclk0_mutex);
 
+#ifndef CONFIG_SND_SOC_MADERA
 	if (gpio_is_valid(pdata->us_euro_gpio)) {
 		gpio_free(pdata->us_euro_gpio);
 		pdata->us_euro_gpio = 0;
@@ -5867,6 +5888,7 @@ static int msm_asoc_machine_remove(struct platform_device *pdev)
 		gpio_free(pdata->hph_en0_gpio);
 		pdata->hph_en0_gpio = 0;
 	}
+#endif
 
 	if (pdata->snd_card_val > INT_MAX_SND_CARD)
 		audio_notifier_deregister("sdm660");
