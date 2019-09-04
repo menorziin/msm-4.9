@@ -43,18 +43,41 @@ static struct snd_soc_card snd_soc_card_msm_card_tasha = {
 };
 
 #ifdef CONFIG_SND_SOC_CS35L41
-#define AMP_CODEC_NAME	"cs35l41.0-0040"
-#define AMP_DAI_NAME	"cs35l41-pcm"
+#define RCV_AMP_CODEC_NAME   "cs35l41.2-0041"
+#ifdef CONFIG_PRODUCT_RACERL
+#define SPK_AMP_CODEC_NAME   "cs35l41.2-0040"
+#else
+#define SPK_AMP_CODEC_NAME   "cs35l41.0-0040"
+#endif
+#define AMP_DAI_NAME         "cs35l41-pcm"
 #else
 #define AMP_CODEC_NAME	"cs35l36.0-0040",
 #define AMP_DAI_NAME	"cs35l36-pcm"
 #endif
 
+#ifdef CONFIG_SND_SOC_CS47L35
+#define CIRRUS_CODEC_NAME         "cs47l35-codec"
+#define CIRRUS_CODEC_DAI1_NAME    "cs47l35-slim1"
+#define CIRRUS_CODEC_DAI2_NAME    "cs47l35-slim2"
+#define CIRRUS_CODEC_AIF1_NAME    "cs47l35-aif1"
+#else
+#define CIRRUS_CODEC_NAME         "cs47l90-codec"
+#define CIRRUS_CODEC_DAI1_NAME    "cs47l90-slim1"
+#define CIRRUS_CODEC_DAI2_NAME    "cs47l90-slim2"
+#define CIRRUS_CODEC_AIF1_NAME    "cs47l90-aif1"
+#endif
+
 static struct snd_soc_codec_conf cirrus_amp_codec_conf[] = {
-		{
-				.dev_name       = AMP_CODEC_NAME,
-				.name_prefix    = "SPK",
-		},
+	{
+		.dev_name       = SPK_AMP_CODEC_NAME,
+		.name_prefix    = "SPK",
+	},
+#ifdef CONFIG_SND_SOC_CS35L41_STEREO
+	{
+		.dev_name       = RCV_AMP_CODEC_NAME,
+		.name_prefix    = "RCV",
+	},
+#endif
 };
 
 struct snd_soc_card snd_soc_card_madera = {
@@ -1377,8 +1400,8 @@ static struct snd_soc_dai_link madera_fe_dai_links[] = {
 		.stream_name = "Slimbus4 Capture",
 		.cpu_dai_name = "msm-dai-q6-dev.16393",
 		.platform_name = "msm-pcm-hostless",
-		.codec_name = "cs47l90-codec",
-		.codec_dai_name = "cs47l90-slim1",
+		.codec_name = CIRRUS_CODEC_NAME,
+		.codec_dai_name = CIRRUS_CODEC_DAI1_NAME,
 		.id = MSM_BACKEND_DAI_SLIMBUS_4_TX,
 		.be_hw_params_fixup = msm_ext_be_hw_params_fixup,
 		.ops = &msm_ext_slimbus_be_ops,
@@ -1391,8 +1414,8 @@ static struct snd_soc_dai_link madera_fe_dai_links[] = {
 		.stream_name = "SLIMBUS_2 Hostless Playback",
 		.cpu_dai_name = "msm-dai-q6-dev.16388",
 		.platform_name = "msm-pcm-hostless",
-		.codec_name = "cs47l90-codec",
-		.codec_dai_name = "cs47l90-slim1",
+		.codec_name = CIRRUS_CODEC_NAME,
+		.codec_dai_name = CIRRUS_CODEC_DAI1_NAME,
 		.ignore_suspend = 1,
 		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ops = &msm_ext_slimbus_2_be_ops,
@@ -1403,8 +1426,8 @@ static struct snd_soc_dai_link madera_fe_dai_links[] = {
 		.stream_name = "SLIMBUS_2 Hostless Capture",
 		.cpu_dai_name = "msm-dai-q6-dev.16389",
 		.platform_name = "msm-pcm-hostless",
-		.codec_name = "cs47l90-codec",
-		.codec_dai_name = "cs47l90-slim1",
+		.codec_name = CIRRUS_CODEC_NAME,
+		.codec_dai_name = CIRRUS_CODEC_DAI1_NAME,
 		.ignore_suspend = 1,
 		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ops =  &msm_ext_slimbus_2_be_ops,
@@ -1426,6 +1449,58 @@ static struct snd_soc_dai_link madera_fe_dai_links[] = {
 		.codec_dai_name = "snd-soc-dummy-dai",
 		.codec_name = "snd-soc-dummy",
 	},
+#ifdef CONFIG_SND_SOC_CS47L35
+	{
+		.name = "CPU-DSP Voice Control",
+		.stream_name = "CPU-DSP Voice Control",
+		.cpu_dai_name = "cs47l35-cpu-voicectrl",
+		.platform_name = "cs47l35-codec",
+		.codec_dai_name = "cs47l35-dsp-voicectrl",
+		.codec_name = "cs47l35-codec",
+		.ignore_suspend = 1,
+		.dynamic = 0,
+	},
+	{
+		.name = "CPU-DSP Trace",
+		.stream_name = "CPU-DSP Voice Trace",
+		.cpu_dai_name = "cs47l35-cpu-trace",
+		.platform_name = "cs47l35-codec",
+		.codec_dai_name = "cs47l35-dsp-trace",
+		.codec_name = "cs47l35-codec",
+		.ignore_suspend = 1,
+		.dynamic = 0,
+	},
+	{
+		.name = "CPU-DSP2 Text",
+		.stream_name = "CPU-DSP2 Text",
+		.cpu_dai_name = "cs47l35-dsp2-cpu-txt",
+		.platform_name = "cs47l35-codec",
+		.codec_dai_name = "cs47l35-dsp2-txt",
+		.codec_name = "cs47l35-codec",
+		.ignore_suspend = 1,
+		.dynamic = 0,
+	},
+	{
+		.name = "CPU-DSP3 Text",
+		.stream_name = "CPU-DSP3 Text",
+		.cpu_dai_name = "cs47l35-dsp3-cpu-txt",
+		.platform_name = "cs47l35-codec",
+		.codec_dai_name = "cs47l35-dsp3-txt",
+		.codec_name = "cs47l35-codec",
+		.ignore_suspend = 1,
+		.dynamic = 0,
+	},
+	{
+		.name = "CPU-DSP1 Text",
+		.stream_name = "CPU-DSP1 Text",
+		.cpu_dai_name = "cs47l35-dsp1-cpu-txt",
+		.platform_name = "cs47l35-codec",
+		.codec_dai_name = "cs47l35-dsp1-txt",
+		.codec_name = "cs47l35-codec",
+		.ignore_suspend = 1,
+		.dynamic = 0,
+	}
+#else
 	{
 		.name = "CPU-DSP Voice Control",
 		.stream_name = "CPU-DSP Voice Control",
@@ -1476,6 +1551,7 @@ static struct snd_soc_dai_link madera_fe_dai_links[] = {
 		.ignore_suspend = 1,
 		.dynamic = 0,
 	}
+#endif
 };
 
 static struct snd_soc_dai_link msm_ext_common_be_dai[] = {
@@ -2025,7 +2101,7 @@ static struct snd_soc_dai_link msm_afe_rxtx_lb_be_dai_link[] = {
 	},
 };
 
-static const struct snd_soc_pcm_stream cs35l35_params[] = {
+static const struct snd_soc_pcm_stream cirrus_amp_params[] = {
 	{
 		.formats = SNDRV_PCM_FMTBIT_S16_LE,
 		.rate_min = 48000,
@@ -2042,7 +2118,7 @@ static const struct snd_soc_pcm_stream cs35l35_params[] = {
 	},
 };
 
-static int cs35l35_dai_init(struct snd_soc_pcm_runtime *rtd)
+static int cirrus_amp_dai_init(struct snd_soc_pcm_runtime *rtd)
 {
 	int ret;
 	int codec_clock = CS35L35_MCLK_RATE;
@@ -2050,6 +2126,7 @@ static int cs35l35_dai_init(struct snd_soc_pcm_runtime *rtd)
 	struct snd_soc_dapm_context *dapm = snd_soc_codec_get_dapm(codec);
 	struct snd_soc_dai *aif1_dai = rtd->cpu_dai;
 	struct snd_soc_dai *cs35l35_dai = rtd->codec_dai;
+	const char *name_prefix = rtd->codec->component.name_prefix;
 
 	ret = snd_soc_dai_set_sysclk(aif1_dai, MADERA_CLK_SYSCLK_3, 0, 0);
 	if (ret != 0) {
@@ -2074,21 +2151,21 @@ static int cs35l35_dai_init(struct snd_soc_pcm_runtime *rtd)
 #if defined(CONFIG_SND_SOC_CS35L36)
 	snd_soc_dapm_ignore_suspend(dapm, "SPK AMP Playback");
 #else
-	snd_soc_dapm_ignore_suspend(dapm, "SPK SPK");
+	if (name_prefix) {
+		if (!strcmp("RCV", name_prefix)) {
+			snd_soc_dapm_ignore_suspend(dapm, "RCV SPK");
+			snd_soc_dapm_ignore_suspend(dapm, "RCV AMP Playback");
+			snd_soc_dapm_ignore_suspend(dapm, "RCV AMP Capture");
+		} else if(!strcmp("SPK", name_prefix)) {
+			snd_soc_dapm_ignore_suspend(dapm, "SPK SPK");
+			snd_soc_dapm_ignore_suspend(dapm, "SPK AMP Playback");
+			snd_soc_dapm_ignore_suspend(dapm, "SPK AMP Capture");
+		}
+	}
 #endif
 	snd_soc_dapm_sync(dapm);
 	return 0;
 }
-
-#if defined(CONFIG_SND_SOC_CS35L36) || defined(CONFIG_SND_SOC_CS35L41)
-static const struct snd_soc_pcm_stream cs35l35_pdm_params = {
-	.formats = SNDRV_PCM_FMTBIT_S16_LE,
-	.rate_min = 96000,
-	.rate_max = 96000,
-	.channels_min = 1,
-	.channels_max = 2,
-};
-#endif
 
 static struct snd_soc_dai_link madera_be_dai_links[] = {
 	/* Backend DAI Links */
@@ -2097,12 +2174,12 @@ static struct snd_soc_dai_link madera_be_dai_links[] = {
 		.stream_name = "Slimbus Playback",
 		.cpu_dai_name = "msm-dai-q6-dev.16384",
 		.platform_name = "msm-pcm-routing",
-		.codec_name = "cs47l90-codec",
-		.codec_dai_name = "cs47l90-slim1",
+		.codec_name = CIRRUS_CODEC_NAME,
+		.codec_dai_name = CIRRUS_CODEC_DAI1_NAME,
 		.no_pcm = 1,
 		.dpcm_playback = 1,
 		.id = MSM_BACKEND_DAI_SLIMBUS_0_RX,
-		.init = &msm_cs47l35_init,
+		.init = &cirrus_codec_init,
 		.be_hw_params_fixup = msm_ext_be_hw_params_fixup,
 		/* this dainlink has playback support */
 		.ignore_pmdown_time = 1,
@@ -2114,8 +2191,8 @@ static struct snd_soc_dai_link madera_be_dai_links[] = {
 		.stream_name = "Slimbus Capture",
 		.cpu_dai_name = "msm-dai-q6-dev.16385",
 		.platform_name = "msm-pcm-routing",
-		.codec_name = "cs47l90-codec",
-		.codec_dai_name = "cs47l90-slim1",
+		.codec_name = CIRRUS_CODEC_NAME,
+		.codec_dai_name = CIRRUS_CODEC_DAI1_NAME,
 		.no_pcm = 1,
 		.dpcm_capture = 1,
 		.id = MSM_BACKEND_DAI_SLIMBUS_0_TX,
@@ -2128,8 +2205,8 @@ static struct snd_soc_dai_link madera_be_dai_links[] = {
 		.stream_name = "Slimbus1 Playback",
 		.cpu_dai_name = "msm-dai-q6-dev.16386",
 		.platform_name = "msm-pcm-routing",
-		.codec_name = "cs47l90-codec",
-		.codec_dai_name = "cs47l90-slim2",
+		.codec_name = CIRRUS_CODEC_NAME,
+		.codec_dai_name = CIRRUS_CODEC_DAI2_NAME,
 		.no_pcm = 1,
 		.dpcm_playback = 1,
 		.id = MSM_BACKEND_DAI_SLIMBUS_1_RX,
@@ -2144,8 +2221,8 @@ static struct snd_soc_dai_link madera_be_dai_links[] = {
 		.stream_name = "Slimbus1 Capture",
 		.cpu_dai_name = "msm-dai-q6-dev.16387",
 		.platform_name = "msm-pcm-routing",
-		.codec_name = "cs47l90-codec",
-		.codec_dai_name = "cs47l90-slim2",
+		.codec_name = CIRRUS_CODEC_NAME,
+		.codec_dai_name = CIRRUS_CODEC_DAI2_NAME,
 		.no_pcm = 1,
 		.dpcm_capture = 1,
 		.id = MSM_BACKEND_DAI_SLIMBUS_1_TX,
@@ -2158,8 +2235,8 @@ static struct snd_soc_dai_link madera_be_dai_links[] = {
 		.stream_name = "Slimbus2 Playback",
 		.cpu_dai_name = "msm-dai-q6-dev.16388",
 		.platform_name = "msm-pcm-routing",
-		.codec_name = "cs47l90-codec",
-		.codec_dai_name = "cs47l90-slim1",
+		.codec_name = CIRRUS_CODEC_NAME,
+		.codec_dai_name = CIRRUS_CODEC_DAI1_NAME,
 		.no_pcm = 1,
 		.dpcm_playback = 1,
 		.id = MSM_BACKEND_DAI_SLIMBUS_2_RX,
@@ -2175,8 +2252,8 @@ static struct snd_soc_dai_link madera_be_dai_links[] = {
 		.stream_name = "Slimbus3 Playback",
 		.cpu_dai_name = "msm-dai-q6-dev.16390",
 		.platform_name = "msm-pcm-routing",
-		.codec_name = "cs47l90-codec",
-		.codec_dai_name = "cs47l90-slim1",
+		.codec_name = CIRRUS_CODEC_NAME,
+		.codec_dai_name = CIRRUS_CODEC_DAI1_NAME,
 		.no_pcm = 1,
 		.dpcm_playback = 1,
 		.id = MSM_BACKEND_DAI_SLIMBUS_3_RX,
@@ -2191,8 +2268,8 @@ static struct snd_soc_dai_link madera_be_dai_links[] = {
 		.stream_name = "Slimbus3 Capture",
 		.cpu_dai_name = "msm-dai-q6-dev.16391",
 		.platform_name = "msm-pcm-routing",
-		.codec_name = "cs47l90-codec",
-		.codec_dai_name = "cs47l90-slim1",
+		.codec_name = CIRRUS_CODEC_NAME,
+		.codec_dai_name = CIRRUS_CODEC_DAI1_NAME,
 		.no_pcm = 1,
 		.dpcm_capture = 1,
 		.dpcm_playback = 1,
@@ -2206,8 +2283,8 @@ static struct snd_soc_dai_link madera_be_dai_links[] = {
 		.stream_name = "Slimbus4 Playback",
 		.cpu_dai_name = "msm-dai-q6-dev.16392",
 		.platform_name = "msm-pcm-routing",
-		.codec_name = "cs47l90-codec",
-		.codec_dai_name = "cs47l90-slim1",
+		.codec_name = CIRRUS_CODEC_NAME,
+		.codec_dai_name = CIRRUS_CODEC_DAI1_NAME,
 		.no_pcm = 1,
 		.dpcm_playback = 1,
 		.id = MSM_BACKEND_DAI_SLIMBUS_4_RX,
@@ -2222,8 +2299,8 @@ static struct snd_soc_dai_link madera_be_dai_links[] = {
 		.stream_name = "Slimbus5 Playback",
 		.cpu_dai_name = "msm-dai-q6-dev.16394",
 		.platform_name = "msm-pcm-routing",
-		.codec_name = "cs47l90-codec",
-		.codec_dai_name = "cs47l90-slim2",
+		.codec_name = CIRRUS_CODEC_NAME,
+		.codec_dai_name = CIRRUS_CODEC_DAI2_NAME,
 		.no_pcm = 1,
 		.dpcm_playback = 1,
 		.id = MSM_BACKEND_DAI_SLIMBUS_5_RX,
@@ -2238,8 +2315,8 @@ static struct snd_soc_dai_link madera_be_dai_links[] = {
 		.stream_name = "Slimbus6 Playback",
 		.cpu_dai_name = "msm-dai-q6-dev.16396",
 		.platform_name = "msm-pcm-routing",
-		.codec_name = "cs47l90-codec",
-		.codec_dai_name = "cs47l90-slim2",
+		.codec_name = CIRRUS_CODEC_NAME,
+		.codec_dai_name = CIRRUS_CODEC_DAI2_NAME,
 		.no_pcm = 1,
 		.dpcm_playback = 1,
 		.id = MSM_BACKEND_DAI_SLIMBUS_6_RX,
@@ -2252,19 +2329,37 @@ static struct snd_soc_dai_link madera_be_dai_links[] = {
 	{ /* codec to amp link */
 		.name = "MADERA-AMP",
 		.stream_name = "MADERA-AMP Playback",
-		.cpu_name = "cs47l90-codec",
-		.cpu_dai_name = "cs47l90-aif1",
-		.codec_name = AMP_CODEC_NAME,
+		.cpu_name = CIRRUS_CODEC_NAME,
+		.cpu_dai_name = CIRRUS_CODEC_AIF1_NAME,
+		.codec_name = SPK_AMP_CODEC_NAME,
 		.codec_dai_name = AMP_DAI_NAME,
-		.init = cs35l35_dai_init,
+		.init = cirrus_amp_dai_init,
 		.dai_fmt = SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF |
 			SND_SOC_DAIFMT_CBS_CFS,
 		.no_pcm = 1,
 		.ignore_pmdown_time = 1,
 		.ignore_suspend = 1,
-		.params = &cs35l35_params[0],
-		.num_params = ARRAY_SIZE(cs35l35_params),
+		.params = &cirrus_amp_params[0],
+		.num_params = ARRAY_SIZE(cirrus_amp_params),
 	},
+#ifdef CONFIG_SND_SOC_CS35L41_STEREO
+		{ /* codec to amp link */
+		.name = "MADERA-AMP-RCV",
+		.stream_name = "MADERA-AMP-RCV Playback",
+		.cpu_name = CIRRUS_CODEC_NAME,
+		.cpu_dai_name = CIRRUS_CODEC_AIF1_NAME,
+		.codec_name = RCV_AMP_CODEC_NAME,
+		.codec_dai_name = AMP_DAI_NAME,
+		.init = cirrus_amp_dai_init,
+		.dai_fmt = SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF |
+			SND_SOC_DAIFMT_CBS_CFS,
+		.no_pcm = 1,
+		.ignore_pmdown_time = 1,
+		.ignore_suspend = 1,
+		.params = &cirrus_amp_params[0],
+		.num_params = ARRAY_SIZE(cirrus_amp_params),
+	},
+#endif
 };
 
 static struct snd_soc_dai_link msm_wcn_be_dai_links[] = {
